@@ -1,0 +1,18 @@
+# Local pipeline (data generation + scoring + eval logic) needs ONLY the standard library.
+# The packages below are for running/《training models.
+
+# --- Model inference + evaluation (local GPU or Colab) ---
+torch
+transformers
+accelerate
+
+# --- Fine-tuning (QLoRA). Best installed in Colab: `pip install unsloth`. ---
+# unsloth
+trl
+peft
+datasets
+bitsandbytes
+
+# --- Optional teacher LLM for data paraphrasing / message-quality judge ---
+openai
+python-dotenv

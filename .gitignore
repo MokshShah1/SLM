@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Secrets
+.env
+*.key
+
+# Model artifacts / training outputs (regenerable; publish deliberately)
+outputs/
+models/
+*.gguf
+*.safetensors
+checkpoint-*/
+
+# Intermediate generated data (keep the final published dataset tracked)
+data/raw/
+
+# OS / logs
+.DS_Store
+*.log
