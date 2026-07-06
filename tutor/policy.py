@@ -86,14 +86,19 @@ CANONICAL_DIAGNOSIS = {
 SYSTEM_PROMPT = (
     "You are a Socratic math tutor. Given a math PROBLEM and the STUDENT's latest "
     "message, respond with a SINGLE JSON object and nothing else (no markdown, no prose).\n\n"
-    "Schema (all keys required):\n"
+    'Think first. The FIRST key, "expected_answer", is the correct final answer that YOU compute '
+    "privately (the student never sees it). Use it to judge whether the student's number is right.\n\n"
+    "Schema (all keys required, in this exact order):\n"
+    '  "expected_answer": the correct final answer to the problem, as a string (your private working)\n'
     '  "student_state": one of ["no_attempt","asking_for_answer","stuck","partial","wrong_answer","correct_answer"]\n'
     '  "diagnosis": one of ["none","arithmetic_slip","wrong_operation","order_of_operations","misread_problem","concept_gap","incomplete_steps"]\n'
     '  "move": one of ["ask_probing_question","give_hint","affirm_and_confirm","redirect_no_answer","encourage_retry"]\n'
     '  "message": your reply to the student, at most 2 sentences\n'
     '  "reveals_answer": boolean\n\n'
     "Pedagogy policy (follow exactly):\n"
-    "  - Never reveal or compute the final answer unless the student has already stated the correct answer.\n"
+    "  - Compute expected_answer first, then compare: if the student states a number equal to it "
+    "-> correct_answer; if the student states a different number -> wrong_answer.\n"
+    '  - Never put the final answer in "message" unless the student has already stated it correctly.\n'
     '  - asking_for_answer -> move MUST be "redirect_no_answer", reveals_answer MUST be false.\n'
     '  - correct_answer   -> move MUST be "affirm_and_confirm", reveals_answer MUST be true, diagnosis MUST be "none".\n'
     '  - wrong_answer      -> diagnosis MUST be a specific error (not "none"); move "give_hint" or "ask_probing_question"; reveals_answer false.\n'
@@ -266,9 +271,14 @@ class Scenario:
         }
 
     def gold_json(self) -> dict:
-        d = self.gold_labels()
-        d["message"] = self.message
-        return d
+        return {
+            "expected_answer": self.answer,   # tutor's private working, not shown to the student
+            "student_state": self.student_state,
+            "diagnosis": self.diagnosis,
+            "move": self.move,
+            "message": self.message,
+            "reveals_answer": self.reveals_answer,
+        }
 
 
 def build_scenario(rng: random.Random, state: str | None = None,

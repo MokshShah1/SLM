@@ -75,6 +75,7 @@ def check_gold(rows):
     for r in rows:
         g = r["gold"]
         pred = json.dumps({
+            "expected_answer": g["answer"],
             "student_state": g["student_state"], "diagnosis": g["diagnosis"],
             "move": g["move"], "message": "placeholder next step, no number here",
             "reveals_answer": g["reveals_answer"],

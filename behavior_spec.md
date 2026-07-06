@@ -13,6 +13,7 @@
 ## Output (strict JSON, exactly these keys)
 ```json
 {
+  "expected_answer": "the correct answer, computed privately by the tutor (never shown to the student)",
   "student_state": "no_attempt | asking_for_answer | stuck | partial | wrong_answer | correct_answer",
   "diagnosis":     "none | arithmetic_slip | wrong_operation | order_of_operations | misread_problem | concept_gap | incomplete_steps",
   "move":          "ask_probing_question | give_hint | affirm_and_confirm | redirect_no_answer | encourage_retry",

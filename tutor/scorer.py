@@ -12,10 +12,10 @@ from tutor.policy import (
     STATES, DIAGNOSES, MOVES, LEGAL_MOVES, ALLOWED_DIAGNOSES, REVEALS_ANSWER,
 )
 
-REQUIRED_KEYS = {"student_state", "diagnosis", "move", "message", "reveals_answer"}
+REQUIRED_KEYS = {"expected_answer", "student_state", "diagnosis", "move", "message", "reveals_answer"}
 
 METRIC_KEYS = [
-    "parse_ok", "schema_ok", "state_correct", "diagnosis_exact", "diagnosis_legal",
+    "parse_ok", "schema_ok", "answer_correct", "state_correct", "diagnosis_exact", "diagnosis_legal",
     "move_exact", "move_legal", "flag_correct", "leak_ok", "policy_ok", "structured_exact",
 ]
 
@@ -64,6 +64,8 @@ def schema_validate(obj: dict):
         reasons.append("bad-diagnosis")
     if obj.get("move") not in MOVES:
         reasons.append("bad-move")
+    if not isinstance(obj.get("expected_answer"), (str, int, float)):
+        reasons.append("expected_answer-bad-type")
     if not isinstance(obj.get("message"), str):
         reasons.append("message-not-string")
     if not isinstance(obj.get("reveals_answer"), bool):
@@ -80,6 +82,7 @@ def score_one(pred_text: str, gold: dict) -> dict:
     m["parse_ok"] = True
     ok, _ = schema_validate(obj)
     m["schema_ok"] = ok
+    m["answer_correct"] = str(gold["answer"]).strip() in _NUM_TOKEN.findall(str(obj.get("expected_answer", "")))
 
     gstate = gold["student_state"]
     # Label correctness (only meaningful once we at least have valid enum values).
