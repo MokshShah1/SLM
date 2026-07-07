@@ -59,6 +59,17 @@ Open [`notebooks/01_train_qlora.ipynb`](notebooks/01_train_qlora.ipynb): it inst
 gets this repo, generates data, evaluates the **base** model, QLoRA-fine-tunes, then evaluates the
 **tuned** model on the same held-out set — printing the base-vs-tuned table.
 
+## Results (held-out eval, base vs tuned)
+
+| metric | base | tuned | delta |
+|---|---|---|---|
+| structured_exact | 0.167 | **0.750** | +0.583 |
+| diagnosis_exact | 0.458 | **0.917** | +0.459 |
+| policy_ok | 0.542 | **0.917** | +0.375 |
+| leak_ok (never reveals answer) | 0.750 | **1.000** | +0.250 |
+
+Full write-up + litmus journey + the v1→v2 data iteration: [`BRAINLIFT.md`](BRAINLIFT.md).
+
 ## Deliverables (map to the brief)
 1. **Dataset** — `data/train.jsonl` (published) ← the real artifact
 2. **Model** — LoRA adapter on Qwen3-1.7B (push to HF Hub) + demo in the notebook
