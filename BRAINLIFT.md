@@ -99,3 +99,31 @@ Fine-tuning should teach a model a policy it can't be told, not make it smarter.
 **Experts + sources**
 - "Train Your Own Small Learning Model" brief, the eval section - if you can't measure that your tuned model beats the base, you haven't finished.
 - Norman L. Webb - Depth of Knowledge, the framework this doc is organized around.
+
+---
+
+## Error analysis — where the tuned model still fails, and is it a data problem?
+
+The tuned model is not perfect: `structured_exact` is 0.750 on the held-out set, so about a
+quarter of outputs are still not exactly right. But the failure is not spread evenly, and that
+tells me exactly what kind of problem it is. `policy_ok` (0.917) and `diagnosis_exact` (0.917)
+are both far higher than `structured_exact` — meaning the model almost always picks a *legal*
+move, never leaks the answer, and usually names the right misconception. `structured_exact` is
+the strict AND of state + diagnosis + move + flag all being correct at once, so it is the first
+metric to drop whenever any single field wobbles. In practice the residual errors are
+concentrated in the `wrong_answer` state, where two misconceptions can produce the *same* wrong
+number (e.g. an `arithmetic_slip` and a small `order_of_operations` error can both land one off
+the true answer). The move and the flag are still correct, and the hint is still reasonable — but
+the diagnosis label disagrees with gold, so the example scores as a miss on `structured_exact`
+even though the tutoring behavior is fine.
+
+**This is a data problem, not a hyperparameter problem — which is the whole point of the brief.**
+My wrong answers are synthesized by perturbing the true answer in a way tied to one specific
+misconception, but I do not currently guarantee those perturbations are *disjoint* across
+diagnoses, so a few wrong numbers are genuinely ambiguous between two error types. The fix is in
+the data, not the training config: (1) filter the wrong-answer generator so each perturbation
+maps to exactly one diagnosis (drop collisions), and (2) add more `wrong_answer` coverage for the
+under-represented misconceptions (`misread_problem`, `order_of_operations`) so the model sees more
+contrast between them. I would expect that to close most of the remaining `structured_exact` gap
+without touching a single learning rate — consistent with SPOV 4: when a small model is already
+picking legal moves and withholding the answer, the lever left is data coverage, not compute.
