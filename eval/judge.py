@@ -95,17 +95,46 @@ def _openai_score(client, model: str, row: dict) -> dict:
     return {d: int(obj.get(d, 0)) for d in DIMENSIONS}
 
 
-def score_file(path: str, stub: bool, model: str) -> dict:
+def _anthropic_score(client, model: str, row: dict) -> dict:
+    r = client.messages.create(
+        model=model,
+        max_tokens=200,
+        temperature=0,
+        system=JUDGE_SYSTEM,
+        messages=[{"role": "user", "content": _judge_prompt(row)}],
+    )
+    txt = "".join(b.text for b in r.content if getattr(b, "type", "") == "text").strip()
+    if "{" in txt:
+        txt = txt[txt.find("{"): txt.rfind("}") + 1]
+    obj = json.loads(txt)
+    return {d: int(obj.get(d, 0)) for d in DIMENSIONS}
+
+
+def score_file(path: str, stub: bool, model: str, provider: str = "openai") -> dict:
     rows = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
     client = None
-    if not stub:
+    if not stub and provider == "openai":
         from openai import OpenAI
 
         client = OpenAI(base_url=os.getenv("OPENAI_BASE_URL") or None)
+    elif not stub and provider == "anthropic":
+        from anthropic import Anthropic
+
+        client = Anthropic(
+            base_url=os.getenv("ANTHROPIC_BASE_URL") or None,
+            auth_token=os.getenv("ANTHROPIC_AUTH_TOKEN") or os.getenv("ANTHROPIC_API_KEY"),
+        )
+
+    def score_row(row):
+        if stub:
+            return _stub_score(row)
+        if provider == "anthropic":
+            return _anthropic_score(client, model, row)
+        return _openai_score(client, model, row)
 
     totals = {d: 0 for d in DIMENSIONS}
     for row in rows:
-        s = _stub_score(row) if stub else _openai_score(client, model, row)
+        s = score_row(row)
         for d in DIMENSIONS:
             totals[d] += s[d]
     n = len(rows) or 1
@@ -117,11 +146,13 @@ def main():
     ap.add_argument("--base", required=True, help="JSONL of base-model predictions (with 'message')")
     ap.add_argument("--tuned", required=True, help="JSONL of tuned-model predictions (with 'message')")
     ap.add_argument("--model", default=os.getenv("TEACHER_MODEL", "gpt-4o-mini"))
+    ap.add_argument("--provider", choices=["openai", "anthropic"], default="openai",
+                    help="LLM backend for the judge (anthropic for TrueFoundry Claude gateways)")
     ap.add_argument("--stub", action="store_true", help="use the no-API heuristic judge")
     args = ap.parse_args()
 
-    base = score_file(args.base, args.stub, args.model)
-    tuned = score_file(args.tuned, args.stub, args.model)
+    base = score_file(args.base, args.stub, args.model, args.provider)
+    tuned = score_file(args.tuned, args.stub, args.model, args.provider)
 
     print(f"\nLLM-as-judge — message quality (0-2 per dimension){'  [STUB]' if args.stub else ''}")
     print(f"  base n={base['n']}   tuned n={tuned['n']}\n")
