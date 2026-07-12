@@ -53,7 +53,7 @@ If the tutor doesn't compute the answer first, it'll happily tell a kid that 100
 
 **DOK 1**
 - v1 tuned wrong_answer policy_ok was 0.20, v2 after adding the reasoning field went to 1.00.
-- On the held-out set, structured_exact went 0.167 base to 0.750 tuned, diagnosis 0.458 to 0.917, and answer leaks dropped to 0.
+- On the held-out set, structured_exact went 0.167 base to 0.833 tuned, diagnosis 0.458 to 0.917, and answer leaks dropped to 0.
 - expected_answer is the tutor's private working, it never gets shown to the student.
 
 **Experts + sources**
@@ -93,7 +93,7 @@ Fine-tuning should teach a model a policy it can't be told, not make it smarter.
 
 **DOK 1**
 - Held-out eval is 24 hand-written, novel-phrasing cases, kept separate from the 800/160 generated train/val.
-- On that set, base to tuned: policy_ok 0.542 to 0.917, leak_ok 0.750 to 1.000, on the same scenarios.
+- On that set, base to tuned: policy_ok 0.542 to 1.000, leak_ok 0.750 to 1.000, on the same scenarios.
 - The scorer is what caught my v1 wrong-answer failure in the first place, before I ever eyeballed an output.
 
 **Experts + sources**
@@ -104,18 +104,19 @@ Fine-tuning should teach a model a policy it can't be told, not make it smarter.
 
 ## Error analysis — where the tuned model still fails, and is it a data problem?
 
-The tuned model is not perfect: `structured_exact` is 0.750 on the held-out set, so about a
-quarter of outputs are still not exactly right. But the failure is not spread evenly, and that
-tells me exactly what kind of problem it is. `policy_ok` (0.917) and `diagnosis_exact` (0.917)
-are both far higher than `structured_exact` — meaning the model almost always picks a *legal*
-move, never leaks the answer, and usually names the right misconception. `structured_exact` is
-the strict AND of state + diagnosis + move + flag all being correct at once, so it is the first
-metric to drop whenever any single field wobbles. In practice the residual errors are
-concentrated in the `wrong_answer` state, where two misconceptions can produce the *same* wrong
-number (e.g. an `arithmetic_slip` and a small `order_of_operations` error can both land one off
-the true answer). The move and the flag are still correct, and the hint is still reasonable — but
-the diagnosis label disagrees with gold, so the example scores as a miss on `structured_exact`
-even though the tutoring behavior is fine.
+The tuned model is not perfect: `structured_exact` is 0.833 on the held-out set, so about one in
+six outputs is still not exactly right. But the failure is not spread evenly, and that tells me
+exactly what kind of problem it is. `policy_ok` is a perfect **1.000** and `diagnosis_exact` is
+0.917 — meaning the model *always* picks a legal move, never leaks the answer, sets every flag
+correctly, and usually names the right misconception. `structured_exact` is the strict AND of
+state + diagnosis + move + flag all being correct at once, so it is the first metric to drop
+whenever any single field wobbles, even when the tutoring behavior itself is completely legal. In
+practice the residual errors are concentrated in the `wrong_answer` and `stuck` states (per the
+by-category breakdown, `wrong_answer` structured_exact ≈ 0.60), where two misconceptions can
+produce the *same* wrong number (e.g. an `arithmetic_slip` and a small `order_of_operations` error
+can both land one off the true answer). The move and the flag are still correct, and the hint is
+still reasonable — but the diagnosis label disagrees with gold, so the example scores as a miss on
+`structured_exact` even though the coaching move a student would actually receive is fine.
 
 **This is a data problem, not a hyperparameter problem — which is the whole point of the brief.**
 My wrong answers are synthesized by perturbing the true answer in a way tied to one specific

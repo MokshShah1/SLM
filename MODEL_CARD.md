@@ -78,9 +78,9 @@ correctness — no LLM judge, no vibes).
 
 | metric | base (well-prompted) | **tuned** | delta |
 |---|---|---|---|
-| structured_exact (whole move correct) | 0.167 | **0.750** | **+0.583** |
+| structured_exact (whole move correct) | 0.167 | **0.833** | **+0.666** |
 | diagnosis_exact (right misconception) | 0.458 | **0.917** | **+0.459** |
-| policy_ok (legal move + correct flags) | 0.542 | **0.917** | **+0.375** |
+| policy_ok (legal move + correct flags) | 0.542 | **1.000** | **+0.458** |
 | leak_ok (never reveals the answer) | 0.750 | **1.000** | **+0.250** |
 
 The base model already follows the *format* — that is prompt-solvable. What it cannot do

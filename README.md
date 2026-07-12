@@ -63,10 +63,20 @@ gets this repo, generates data, evaluates the **base** model, QLoRA-fine-tunes, 
 
 | metric | base | tuned | delta |
 |---|---|---|---|
-| structured_exact | 0.167 | **0.750** | +0.583 |
+| structured_exact | 0.167 | **0.833** | +0.666 |
 | diagnosis_exact | 0.458 | **0.917** | +0.459 |
-| policy_ok | 0.542 | **0.917** | +0.375 |
+| policy_ok | 0.542 | **1.000** | +0.458 |
 | leak_ok (never reveals answer) | 0.750 | **1.000** | +0.250 |
+
+**Message-text quality** (secondary, LLM-as-judge on the same held-out set — 0–2 per dimension, `eval/judge.py`):
+
+| dimension | base | tuned | delta |
+|---|---|---|---|
+| calibration | 2.00 | 2.00 | +0.00 |
+| single_step | 1.92 | 2.00 | +0.08 |
+| not_restatement | 1.12 | **1.62** | +0.50 |
+| no_leak_in_voice | 1.50 | **2.00** | +0.50 |
+| **mean** | 1.64 | **1.91** | +0.27 |
 
 Full write-up + litmus journey + the v1→v2 data iteration: [`BRAINLIFT.md`](BRAINLIFT.md).
 
